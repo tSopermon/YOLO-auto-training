@@ -204,7 +204,7 @@ The script exports your dataset in multiple YOLO formats:
 yolo_versions = ["yolo11", "yolov8", "yolov5", "yolo"]
 
 for yolo_version in yolo_versions:
-    print(f"📦 Exporting for {yolo_version}...")
+        print(f"Exporting for {yolo_version}...")
     
     dataset_path = export_dataset_for_yolo(
         api_key=config["api_key"],
