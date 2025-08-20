@@ -12,11 +12,11 @@ python train.py
 ```
 
 **The system automatically:**
-- ✅ Detects dataset structure (flat, nested, mixed)
-- ✅ Converts any format (YOLO, COCO, XML, custom)
-- ✅ Reorganizes to YOLO standard
-- ✅ Generates `data.yaml` configuration
-- ✅ Starts training immediately
+- Detects dataset structure (flat, nested, mixed)
+- Converts any format (YOLO, COCO, XML, custom)
+- Reorganizes to YOLO standard
+- Generates `data.yaml` configuration
+- Starts training immediately
 
 **Supported Sources:**
 - Roboflow exports (any format)
@@ -27,7 +27,7 @@ python train.py
 
 ## Quick Start
 
-**🚀 NEW: [QUICK_START_GUIDE.md](QUICK_START_GUIDE.md)** - Get training in minutes with your dataset!
+**NEW: [QUICK_START_GUIDE.md](QUICK_START_GUIDE.md)** - Get training in minutes with your dataset!
 
 ### 1. Setup Environment
 ```bash
@@ -141,7 +141,7 @@ python -m pytest tests/ -v
 2. **System overview**: [docs/workflow/01-system-overview/01-system-overview.md](docs/workflow/01-system-overview/01-system-overview.md)
 3. **Training workflows**: [docs/workflow/04-integration-workflows/01-training-workflows.md](docs/workflow/04-integration-workflows/01-training-workflows.md)
 
-### **📁 Complete Documentation Coverage**
+### **Complete Documentation Coverage**
 The documentation covers **ALL files in ALL repository directories**:
 - **System Overview** - What the system does and why it matters
 - **Core Components** - Main training script, configuration, utilities, dataset system

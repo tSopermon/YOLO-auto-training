@@ -445,7 +445,7 @@ utils/auto_dataset_preparer.py   89      5    94%   67-71
 ------------------------------------------------------------
 TOTAL                           134      7    95%
 
-✅ All tests passed!
+        All tests passed!
 ```
 
 ### **Coverage Reports**

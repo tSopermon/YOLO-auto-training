@@ -236,7 +236,7 @@ model.export(format="openvino", half=False)
 # Move exported files to organized structure
 if onnx_files:
     shutil.move(onnx_files[0], onnx_path)
-    print(f"✅ ONNX exported: {onnx_path}")
+            print(f"ONNX exported: {onnx_path}")
 
 # Validate exports
 validate_exported_model(onnx_path)
@@ -554,10 +554,10 @@ def test_exported_model(model_path):
     try:
         model = load_exported_model(model_path)
         result = model.infer(test_input)
-        print(f"✅ Model {model_path} works correctly")
+        print(f"Model {model_path} works correctly")
         return True
     except Exception as e:
-        print(f"❌ Model {model_path} failed: {e}")
+        print(f"Model {model_path} failed: {e}")
         return False
 ```
 

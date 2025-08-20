@@ -234,7 +234,7 @@ def download_weights_with_retry(model_type: str, size: str, max_retries: int = 3
             logger.info(f"Downloading weights (attempt {attempt + 1}/{max_retries})")
             
             if download_weights(model_type, size):
-                logger.info("✅ Weights downloaded successfully")
+                logger.info("Weights downloaded successfully")
                 return True
             else:
                 raise RuntimeError("Download failed")
@@ -282,7 +282,7 @@ def safe_model_loading(config: "YOLOConfig") -> Optional[nn.Module]:
         with torch.no_grad():
             output = model(dummy_input)
         
-        logger.info("✅ Model loaded and verified successfully")
+        logger.info("Model loaded and verified successfully")
         return model
         
     except Exception as e:
@@ -1152,23 +1152,23 @@ def create_user_friendly_error_message(error: Exception, context: str) -> str:
     
     # Build user-friendly message
     message = f"""
-❌ Error: {guidance['message']}
+        Error: {guidance['message']}
 
-📍 Context: {context}
-🔍 Error Details: {str(error)}
+        Context: {context}
+        Error Details: {str(error)}
 
-💡 Common Causes:
+        Common Causes:
 """
     
     for cause in guidance["common_causes"]:
         message += f"   • {cause}\n"
     
-    message += "\n🛠️  Solutions:\n"
+            message += "\nSolutions:\n"
     for solution in guidance["solutions"]:
         message += f"   • {solution}\n"
     
     message += f"""
-📋 For more help:
+    For more help:
    • Check the documentation
    • Review system logs
    • Contact support with error details
@@ -1191,7 +1191,7 @@ def generate_troubleshooting_guide(error_type: str) -> str:
     
     guides = {
         "dataset_preparation": """
-🔧 Dataset Preparation Issues
+Dataset Preparation Issues
 
 Common Problems:
 1. Dataset not found
@@ -1216,7 +1216,7 @@ Solutions:
 """,
         
         "training_failures": """
-🔧 Training Failures
+Training Failures
 
 Common Problems:
 1. GPU out of memory
@@ -1242,7 +1242,7 @@ Solutions:
 """,
         
         "model_export": """
-🔧 Model Export Issues
+Model Export Issues
 
 Common Problems:
 1. Export format not supported

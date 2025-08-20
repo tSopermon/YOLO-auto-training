@@ -24,7 +24,7 @@ The workflow documentation provides:
 2. **Start with**: [System Overview](workflow/01-system-overview/01-system-overview.md)
 3. **Follow**: [Training Workflows](workflow/04-integration-workflows/01-training-workflows.md)
 
-## **📁 Documentation Structure**
+## **Documentation Structure**
 
 ```
 docs/
