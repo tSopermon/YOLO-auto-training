@@ -1,6 +1,6 @@
 # Model Training System Documentation
 
-## **Complete Documentation System** 🚀
+## **Complete Documentation System**
 
 **All documentation is now consolidated in this comprehensive workflow documentation system.**
 
