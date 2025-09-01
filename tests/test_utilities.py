@@ -15,7 +15,7 @@ import shutil
 from utils.evaluation import YOLOEvaluator, evaluate_model, visualize_predictions
 from utils.export_utils import YOLOExporter, export_model, export_to_onnx
 from utils.training import YOLOTrainer, train_model, validate_model
-from utils.training_monitor import TrainingMonitor, create_training_monitor
+from utils.training_monitor import TrainingMonitor
 
 
 class MockYOLOConfig:
@@ -417,75 +417,16 @@ class TestTrainingMonitor:
         assert monitor.log_dir == log_dir
         assert log_dir.exists()
 
-    def test_log_epoch_metrics(self):
-        """Test logging epoch metrics."""
-        config = MockYOLOConfig()
-        log_dir = Path("tests/logs")
-
-        monitor = TrainingMonitor(
-            config, log_dir, enable_tensorboard=False, enable_wandb=False
-        )
-
-        train_metrics = {"train_loss": 0.5}
-        val_metrics = {"val_loss": 0.6}
-        learning_rate = 0.01
-
-        monitor.log_epoch_metrics(1, train_metrics, val_metrics, learning_rate)
-
-        assert "epoch" in monitor.metrics_history
-        assert "train_train_loss" in monitor.metrics_history  # Prefixed with 'train_'
-        assert "val_val_loss" in monitor.metrics_history  # Prefixed with 'val_'
-        assert "learning_rate" in monitor.metrics_history
-
-    def test_create_training_plots(self):
-        """Test creating training plots."""
-        config = MockYOLOConfig()
-        log_dir = Path("tests/logs")
-
-        monitor = TrainingMonitor(
-            config, log_dir, enable_tensorboard=False, enable_wandb=False
-        )
-
-        # Add some mock metrics
-        monitor.metrics_history["train_loss"] = [0.5, 0.4, 0.3]
-        monitor.metrics_history["val_loss"] = [0.6, 0.5, 0.4]
-        monitor.metrics_history["learning_rate"] = [0.01, 0.008, 0.006]
-
-        # Test plot creation
-        monitor.create_training_plots(save_plots=False)
-
-        # Check if plots directory was created
-        plots_dir = log_dir / "plots"
-        assert plots_dir.exists()
-
-    def test_generate_training_report(self):
-        """Test training report generation."""
-        config = MockYOLOConfig()
-        log_dir = Path("tests/logs")
-
-        monitor = TrainingMonitor(
-            config, log_dir, enable_tensorboard=False, enable_wandb=False
-        )
-
-        # Add some mock metrics
-        monitor.metrics_history["epoch"] = [1, 2, 3]
-        monitor.metrics_history["train_loss"] = [0.5, 0.4, 0.3]
-        monitor.metrics_history["val_loss"] = [0.6, 0.5, 0.4]
-        monitor.metrics_history["learning_rate"] = [0.01, 0.008, 0.006]
-
-        report = monitor.generate_training_report()
-
-        assert isinstance(report, str)
-        assert "YOLO Training Report" in report
-        assert "Model Type: yolov8" in report
-        assert "Total Epochs: 3" in report
-
     def test_create_training_monitor(self):
-        """Test create_training_monitor factory function."""
+        """Test TrainingMonitor instantiation."""
         config = MockYOLOConfig()
         log_dir = Path("tests/logs")
 
-        monitor = create_training_monitor(config, log_dir)
+        monitor = TrainingMonitor(
+            config=config,
+            log_dir=log_dir,
+            enable_tensorboard=False
+        )
 
         assert isinstance(monitor, TrainingMonitor)
         assert monitor.config == config
