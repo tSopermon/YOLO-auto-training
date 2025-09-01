@@ -13,7 +13,7 @@ This guide will get you training a YOLO model with your dataset in minutes. Choo
 ### 1. Clone and Navigate
 ```bash
 git clone <your-repository-url>
-cd model_training
+cd YOLO-auto-training
 ```
 
 ### 2. Create Virtual Environment
@@ -154,14 +154,14 @@ python train.py --config config/my_config.py
 
 ### Step 2: Advanced Training
 ```bash
-# Multi-GPU training
-python train.py --model-type yolov8 --device 0,1
+# Multi-GPU training (specify device IDs)
+python train.py --model-type yolov8 --device cuda
 
-# Custom learning rate schedule
-python train.py --model-type yolov8 --lr 0.001 --lr-scheduler cosine
+# Large model with high epochs
+python train.py --model-type yolov8 --epochs 300 --batch-size 32
 
-# Advanced augmentation
-python train.py --model-type yolov8 --augment --mosaic --mixup
+# Custom image size and device settings
+python train.py --model-type yolov8 --image-size 1024 --device auto
 ```
 
 ### Step 3: Custom Export Pipeline
@@ -277,7 +277,7 @@ After your first successful training:
 ## File Structure After Training
 
 ```
-model_training/
+YOLO-auto-training/
 ├── logs/                           # Training results
 │   └── your_experiment/
 │       ├── weights/
