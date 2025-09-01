@@ -174,7 +174,7 @@ def main():
     print("=" * 60)
 
     # Create weights directory
-    weights_dir = Path(__file__).parent / "pretrained_weights"
+    weights_dir = Path(__file__).parent.parent / "pretrained_weights"
     weights_dir.mkdir(exist_ok=True)
     print(f"Weights directory: {weights_dir}")
 
