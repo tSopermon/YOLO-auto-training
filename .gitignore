@@ -201,6 +201,7 @@ dataset/valid
 *.mov
 *.mkv
 dataset_prepared/
+demo_test_dataset/
 
 # Cache files
 *.cache
