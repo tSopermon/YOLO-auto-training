@@ -185,6 +185,11 @@ cython_debug/
 dataset/raw/
 dataset/processed/
 dataset/versions/
+dataset/test
+dataset/train
+dataset/valid
+*.yaml
+*.txt
 *.jpg
 *.jpeg
 *.png

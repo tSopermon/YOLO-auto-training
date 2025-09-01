@@ -473,6 +473,22 @@ def main():
             logger.info(f"Creating configuration for: {args.model_type}")
             config = get_config(args.model_type)
 
+        # Add auto_prepare_dataset_if_needed function
+        def auto_prepare_dataset_if_needed(model_type: str) -> Path:
+            """
+            Automatically prepare dataset for YOLO training if needed.
+            """
+            dataset_path = Path("dataset")
+            if not dataset_path.exists():
+                raise FileNotFoundError(f"Dataset directory not found: {dataset_path}")
+            
+            # Always prepare the dataset to ensure correct configuration
+            logger.info("Preparing dataset for YOLO training...")
+            prepared_path = auto_prepare_dataset(dataset_path, model_type)
+            logger.info("Dataset prepared successfully")
+            
+            return prepared_path
+
         # Update config with command line arguments
         config = update_config_from_args(config, args)
 
