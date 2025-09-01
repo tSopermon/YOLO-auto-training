@@ -154,43 +154,79 @@ def list_downloaded_weights(weights_dir: Path) -> None:
 
 def main():
     """Main function."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Download and manage pretrained YOLO weights")
+    parser.add_argument("--model", choices=["yolo11", "yolov8", "yolov5"], 
+                       help="Model type to download")
+    parser.add_argument("--size", choices=["n", "s", "m", "l", "x"], 
+                       help="Model size to download")
+    parser.add_argument("--all", action="store_true", 
+                       help="Download all available weights")
+    parser.add_argument("--list", action="store_true", 
+                       help="List available weights")
+    parser.add_argument("--downloaded", action="store_true", 
+                       help="List downloaded weights")
+    
+    args = parser.parse_args()
+    
     print("🚀 YOLO Pretrained Weights Downloader")
     print("=" * 60)
 
-    # Get the weights directory
-    script_dir = Path(__file__).parent
-    weights_dir = script_dir / "pretrained_weights"
-
+    # Create weights directory
+    weights_dir = Path(__file__).parent.parent / "pretrained_weights"
+    weights_dir.mkdir(exist_ok=True)
     print(f"Weights directory: {weights_dir}")
 
+    # Handle command line arguments
+    if args.list:
+        list_available_weights()
+        return
+    
+    if args.downloaded:
+        list_downloaded_weights(weights_dir)
+        return
+    
+    if args.all:
+        print("Downloading all available weights...")
+        success_count = 0
+        total_count = 0
+
+        for model_type, sizes in YOLO_WEIGHTS.items():
+            for size in sizes:
+                total_count += 1
+                if download_weights(model_type, size, weights_dir):
+                    success_count += 1
+
+        print(f"\n📊 Download Summary:")
+        print(f"Successfully downloaded: {success_count}/{total_count}")
+        return
+    
+    if args.model and args.size:
+        if download_weights(args.model, args.size, weights_dir):
+            print(f"✅ Successfully downloaded {args.model}{args.size}.pt")
+        else:
+            print(f"❌ Failed to download {args.model}{args.size}.pt")
+        return
+
+    # Check for legacy command format (for backwards compatibility)
     if len(sys.argv) > 1:
         command = sys.argv[1].lower()
-
         if command == "list":
             list_available_weights()
             return
         elif command == "downloaded":
             list_downloaded_weights(weights_dir)
             return
-        elif command == "download":
-            if len(sys.argv) < 4:
-                print(
-                    "Usage: python download_pretrained_weights.py download <model_type> <size>"
-                )
-                print(
-                    "Example: python download_pretrained_weights.py download yolov8 n"
-                )
-                return
-
+        elif command == "download" and len(sys.argv) >= 4:
             model_type = sys.argv[2].lower()
             size = sys.argv[3].lower()
-
             if download_weights(model_type, size, weights_dir):
                 print(f"✅ Successfully downloaded {model_type}{size}.pt")
             else:
                 print(f"❌ Failed to download {model_type}{size}.pt")
             return
-        elif command == "download-all":
+        elif command == "all":
             print("Downloading all available weights...")
             success_count = 0
             total_count = 0
@@ -204,52 +240,6 @@ def main():
             print(f"\n📊 Download Summary:")
             print(f"Successfully downloaded: {success_count}/{total_count}")
             return
-        else:
-            print(f"Unknown command: {command}")
-
-    # Interactive mode
-    print("\nChoose an option:")
-    print("1. List available weights")
-    print("2. List downloaded weights")
-    print("3. Download specific weights")
-    print("4. Download all weights")
-    print("5. Exit")
-
-    while True:
-        choice = input("\nEnter your choice (1-5): ").strip()
-
-        if choice == "1":
-            list_available_weights()
-        elif choice == "2":
-            list_downloaded_weights(weights_dir)
-        elif choice == "3":
-            print("\nAvailable model types:", ", ".join(YOLO_WEIGHTS.keys()))
-            model_type = input("Enter model type: ").strip().lower()
-            print("Available sizes: n, s, m, l, x")
-            size = input("Enter size: ").strip().lower()
-
-            if download_weights(model_type, size, weights_dir):
-                print(f"✅ Successfully downloaded {model_type}{size}.pt")
-            else:
-                print(f"❌ Failed to download {model_type}{size}.pt")
-        elif choice == "4":
-            print("Downloading all available weights...")
-            success_count = 0
-            total_count = 0
-
-            for model_type, sizes in YOLO_WEIGHTS.items():
-                for size in sizes:
-                    total_count += 1
-                    if download_weights(model_type, size, weights_dir):
-                        success_count += 1
-
-            print(f"\n📊 Download Summary:")
-            print(f"Successfully downloaded: {success_count}/{total_count}")
-        elif choice == "5":
-            print("Goodbye!")
-            break
-        else:
-            print("Invalid choice. Please enter 1-5.")
 
 
 if __name__ == "__main__":

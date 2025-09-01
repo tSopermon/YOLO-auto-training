@@ -580,7 +580,11 @@ def main():
                 # Create Ultralytics YOLO instance for training
                 from ultralytics import YOLO
 
-                yolo_model = YOLO(config.weights)
+                # Choose model weights - resume checkpoint takes priority
+                model_weights = args.resume if args.resume else config.weights
+                logger.info(f"Using model weights: {model_weights}")
+                
+                yolo_model = YOLO(model_weights)
 
                 # Start training
                 logger.info("Starting Ultralytics training...")
@@ -598,6 +602,7 @@ def main():
                     'name': results_folder,
                     'exist_ok': True,
                     'lr0': config.model_config.get("learning_rate", 0.01),
+                    'resume': bool(args.resume),  # Enable resume if checkpoint provided
                 }
                 
                 try:
