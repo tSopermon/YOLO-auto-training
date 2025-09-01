@@ -147,6 +147,13 @@ def export_model_to_formats(model_path: Path, export_dir: Path):
 
 def main():
     """Main export function."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Export trained YOLO models to various formats")
+    parser.add_argument("model_path", nargs="?", help="Path to specific model file to export")
+    parser.add_argument("--export-dir", default="exported_models", help="Directory to save exported models")
+    args = parser.parse_args()
+    
     print("🚀 YOLO Model Export Script")
     print("=" * 60)
     print("This script will export your trained models to multiple deployment formats.")
@@ -154,16 +161,27 @@ def main():
 
     # Check if we're in the right directory
     root_dir = Path.cwd()
-    export_dir = root_dir / "exported_models"
-
+    export_dir = Path(args.export_dir)
+    
     # Find trained models
-    trained_models = list(root_dir.glob("*.pt"))
+    if args.model_path:
+        # Use specific model provided
+        model_path = Path(args.model_path)
+        if not model_path.exists():
+            print(f"❌ Model file not found: {model_path}")
+            return
+        if not model_path.suffix == '.pt':
+            print(f"❌ Model file must be a .pt file: {model_path}")
+            return
+        trained_models = [model_path]
+    else:
+        # Find models in current directory
+        trained_models = list(root_dir.glob("*.pt"))
 
     if not trained_models:
-        print("❌ No trained models (.pt files) found in current directory")
-        print(
-            "   Make sure you're running this script from the directory containing your trained models"
-        )
+        print("❌ No trained models (.pt files) found")
+        if not args.model_path:
+            print("   Provide a specific model path or run from directory containing .pt files")
         return
 
     print(f"\n📋 Found {len(trained_models)} trained model(s):")
