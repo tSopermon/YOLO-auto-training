@@ -14,6 +14,7 @@ The workflow documentation provides:
 
 - **Complete System Coverage** - Every component, utility, and workflow documented
 - **Step-by-Step Guidance** - Clear instructions for users at all levels
+- **TensorBoard Integration** - Real-time monitoring and visualization guidance
 - **Best Practices** - Proven approaches for effective system usage
 - **Troubleshooting** - Solutions for common issues and problems
 - **Maintenance Procedures** - How to keep documentation current and useful

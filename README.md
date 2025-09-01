@@ -72,6 +72,7 @@ The system will guide you through:
 - Model size selection (nano to xlarge)
 - Training parameters (epochs, batch size, image size)
 - Advanced options and results folder naming
+- **Automatic TensorBoard launch** for real-time monitoring
 
 #### Partial Interactive (Skip YOLO Selection)
 ```bash
@@ -97,7 +98,29 @@ python train.py \
   --non-interactive
 ```
 
-### 5. Test Automated Dataset System (Optional)
+### 5. Monitor Training with TensorBoard
+
+**Automatic Monitoring** (Recommended):
+- TensorBoard launches automatically during training
+- Opens in your browser with real-time metrics
+- Continues running after training for result analysis
+
+**Manual TensorBoard Management**:
+```bash
+# Check TensorBoard status and open in browser
+python -m utils.tensorboard_manager status
+
+# List all experiments with TensorBoard data
+python -m utils.tensorboard_manager list
+
+# Launch TensorBoard for specific experiment
+python -m utils.tensorboard_manager launch experiment_name
+
+# Stop TensorBoard when done
+python -m utils.tensorboard_manager stop
+```
+
+### 6. Test Automated Dataset System (Optional)
 ```bash
 # Test the automated dataset system
 python tests/test_auto_dataset.py
@@ -221,6 +244,58 @@ When you run training without `--non-interactive`, the system will prompt you fo
 - Use `--non-interactive` for automated scripts
 - Combine with `--results-folder` to skip folder naming prompt
 
+## TensorBoard Integration
+
+### Automatic Training Monitoring
+The system includes **automatic TensorBoard integration** that provides real-time training visualization:
+
+#### During Training
+- **Auto-launch**: TensorBoard opens automatically in your browser
+- **Real-time metrics**: Live loss curves, accuracy plots, and training progress
+- **Model visualization**: Network architecture and computational graphs
+- **Persistent access**: TensorBoard remains running after training completes
+
+#### After Training
+- **Result analysis**: Continue viewing training metrics and model performance
+- **Experiment comparison**: Compare different training runs and experiments
+- **Easy management**: Simple commands to control TensorBoard sessions
+
+#### TensorBoard Management Commands
+```bash
+# Check if TensorBoard is running and open in browser
+python -m utils.tensorboard_manager status
+
+# List all experiments with their TensorBoard data status
+python -m utils.tensorboard_manager list
+
+# Launch TensorBoard for a specific experiment
+python -m utils.tensorboard_manager launch experiment_name
+
+# Launch on custom port
+python -m utils.tensorboard_manager launch experiment_name --port 6007
+
+# Stop all TensorBoard processes
+python -m utils.tensorboard_manager stop
+```
+
+#### TensorBoard Features
+- **Training Metrics**: Loss curves (box, classification, DFL losses)
+- **Validation Metrics**: mAP50, mAP50-95, precision, recall
+- **Model Architecture**: Visual representation of YOLO network structure
+- **Training Images**: Sample batches with augmentations and predictions
+- **Hyperparameters**: Complete training configuration tracking
+- **System Metrics**: GPU utilization, memory usage, training speed
+
+#### Manual Access
+If you need to manually access TensorBoard for any experiment:
+```bash
+# For current training
+http://localhost:6006
+
+# View experiment logs directly
+tensorboard --logdir logs/experiment_name/experiment_name
+```
+
 ## Custom Results Folder Feature
 - When you run training, the system prompts for a custom folder name
 - Results are organized in `logs/your_custom_name/` instead of the default `logs/yolo_training/`
@@ -252,7 +327,8 @@ The system is built with enterprise-grade reliability:
 - **Error Handling**: Graceful failure handling with detailed logging
 - **Data Validation**: Automatic dataset structure and format validation
 - **Checkpoint Management**: Robust save/load with automatic cleanup
-- **Monitoring**: Real-time training progress with TensorBoard and W&B integration
+- **Real-time Monitoring**: Automatic TensorBoard integration with persistent access
+- **Training Visualization**: Live metrics, loss curves, and model performance tracking
 
 ## Prerequisites
 

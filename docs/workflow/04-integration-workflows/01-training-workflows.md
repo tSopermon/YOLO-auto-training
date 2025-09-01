@@ -390,14 +390,43 @@ checkpoint_manager = CheckpointManager(
     max_checkpoints=config.logging_config["num_checkpoint_keep"],
 )
 
-# Initialize training monitor
+# Initialize training monitor with TensorBoard integration
 monitor = TrainingMonitor(
     config=config, 
     log_dir=config.logging_config["log_dir"]
 )
+# Training monitor automatically:
+# - Launches TensorBoard in browser
+# - Provides real-time training visualization
+# - Keeps TensorBoard running after training completion
 ```
 
-#### **Step 3: Training Execution**
+#### **Step 3: TensorBoard Integration**
+The system provides automatic TensorBoard integration for real-time monitoring:
+
+**Automatic Features:**
+- **Browser Launch**: TensorBoard opens automatically during training
+- **Real-time Metrics**: Live loss curves, accuracy plots, mAP tracking
+- **Model Visualization**: Network architecture and computational graphs
+- **Persistent Access**: TensorBoard remains running after training completes
+- **Smart Directory Detection**: Automatically finds Ultralytics log structure
+
+**Manual Management:**
+```bash
+# Check TensorBoard status and open browser
+python -m utils.tensorboard_manager status
+
+# Launch TensorBoard for specific experiment
+python -m utils.tensorboard_manager launch experiment_name
+
+# List all experiments with TensorBoard data
+python -m utils.tensorboard_manager list
+
+# Stop TensorBoard when done
+python -m utils.tensorboard_manager stop
+```
+
+#### **Step 4: Training Execution**
 ```python
 # Create Ultralytics YOLO instance for training
 from ultralytics import YOLO
