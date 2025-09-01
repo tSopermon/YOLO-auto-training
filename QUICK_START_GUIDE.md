@@ -140,13 +140,15 @@ python train.py --model-type yolov8 --export
 
 ### Step 1: Custom Configuration
 ```bash
-# Create custom config file
-cp config/constants.py config/my_config.py
-# Edit my_config.py with your parameters
+# Create custom config YAML file (NOT Python file)
+cp config/advanced_solar_defect.yaml config/my_config.yaml
+# Edit my_config.yaml with your parameters
 
 # Use custom config
-python train.py --config config/my_config.py
+python train.py --config config/my_config.yaml
 ```
+
+**Important**: Configuration files must be in YAML format, not Python. See `config/advanced_solar_defect.yaml` for an example.
 
 **Note**: Replace `python` with your virtual environment path if needed:
 - Linux/Mac: `.venv/bin/python` or `venv/bin/python`  
@@ -154,14 +156,19 @@ python train.py --config config/my_config.py
 
 ### Step 2: Advanced Training
 ```bash
-# Multi-GPU training (specify device IDs)
+# GPU training (use 'cuda', not specific device numbers)
 python train.py --model-type yolov8 --device cuda
 
-# Large model with high epochs
+# Large model with high epochs  
 python train.py --model-type yolov8 --epochs 300 --batch-size 32
 
-# Custom image size and device settings
-python train.py --model-type yolov8 --image-size 1024 --device auto
+# Custom image size - use 'cuda' or 'cpu', not 'auto'
+python train.py --model-type yolov8 --image-size 1024 --device cuda
+```
+
+**GPU Memory Note**: If you get CUDA out of memory errors, reduce batch size:
+```bash
+python train.py --model-type yolov8 --batch-size 8 --device cuda
 ```
 
 ### Step 3: Custom Export Pipeline
@@ -202,6 +209,45 @@ NUM_WORKERS=4
 EXPORT_FORMATS=onnx,torchscript,openvino
 ```
 
+### Example YAML Configuration
+
+Here's an example custom configuration file (`config/my_config.yaml`):
+
+```yaml
+# Model Configuration
+model_type: "yolo11"
+weights: "pretrained_weights/yolo11m.pt"
+
+# Training Parameters  
+epochs: 100
+batch_size: 16
+image_size: 640
+device: "cuda"
+
+# Model Configuration
+model_config:
+  dropout: 0.2
+
+# Augmentation
+augmentation_config:
+  hsv_h: 0.015
+  hsv_s: 0.7
+  hsv_v: 0.4
+  degrees: 10
+  translate: 0.1
+  scale: 0.5
+  fliplr: 0.5
+  mosaic: 1.0
+  mixup: 0.1
+
+# Export Configuration (REQUIRED)
+export_config:
+  export_formats: ["onnx", "torchscript", "openvino"]
+  export_dir: "exported_models"
+  include_nms: true
+  batch_size: 1
+```
+
 ### Environment Variables (Alternative)
 Set environment variables directly:
 
@@ -223,6 +269,15 @@ python train.py --model-type yolov8
 
 # Fully automated
 python train.py --model-type yolov8 --non-interactive
+
+# GPU training (recommended)
+python train.py --model-type yolov8 --device cuda
+
+# CPU training (if no GPU)
+python train.py --model-type yolov8 --device cpu
+
+# Custom configuration file
+python train.py --config config/my_config.yaml
 
 # Validation only
 python train.py --model-type yolov8 --validate-only
@@ -257,9 +312,29 @@ python -m utils.tensorboard_manager stop    # Stop TensorBoard
 ## Troubleshooting
 
 ### Common Issues
-1. **CUDA out of memory**: Reduce batch size with `--batch-size 4`
+1. **CUDA out of memory**: Reduce batch size with `--batch-size 4` or `--batch-size 8`
 2. **Dataset not found**: Ensure dataset is in `dataset/` folder
 3. **Import errors**: Activate virtual environment with `source .venv/bin/activate`
+4. **CUDA not working**: Use `--device cuda` instead of `--device auto` or specific device numbers
+
+### GPU/CUDA Issues
+If you have CUDA available but training fails:
+
+```bash
+# Check CUDA availability
+python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"No GPU\"}')"
+
+# Use explicit CUDA device
+python train.py --device cuda --batch-size 8
+
+# If memory issues persist, try:
+PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True python train.py --device cuda --batch-size 4
+```
+
+### Configuration File Issues
+- **Use YAML format**, not Python files: `config/my_config.yaml`
+- **Required fields**: `model_type`, `weights`, `export_config` with `export_formats`
+- **Example**: See `config/advanced_solar_defect.yaml`
 
 ### Getting Help
 - Check the comprehensive documentation in `docs/workflow/`

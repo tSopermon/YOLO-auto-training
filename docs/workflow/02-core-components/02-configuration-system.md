@@ -158,6 +158,57 @@ config = YOLOConfig(model_type="yolov8")
 config.model_config.update(YOLOV8_CONFIG)
 
 # 3. Applies user overrides (command line or interactive)
+```
+
+### **2. YAML Configuration Files**
+You can create custom configuration files in YAML format for advanced usage:
+
+```yaml
+# config/my_custom_config.yaml
+model_type: "yolo11"
+weights: "pretrained_weights/yolo11m.pt"
+
+epochs: 150
+batch_size: 16
+image_size: 640
+device: "cuda"
+
+model_config:
+  dropout: 0.2
+
+augmentation_config:
+  hsv_h: 0.015
+  hsv_s: 0.7
+  hsv_v: 0.4
+  degrees: 10
+  translate: 0.1
+  scale: 0.5
+  fliplr: 0.5
+  mosaic: 1.0
+  mixup: 0.1
+
+# REQUIRED: Export configuration
+export_config:
+  export_formats: ["onnx", "torchscript", "openvino"]
+  export_dir: "exported_models"
+  include_nms: true
+  batch_size: 1
+```
+
+**Loading YAML Configuration:**
+```python
+# Load from YAML file
+config = YOLOConfig.load("config/my_custom_config.yaml")
+
+# Or via command line
+python train.py --config config/my_custom_config.yaml
+```
+
+**Important Notes:**
+- Configuration files must be in **YAML format**, not Python
+- **Required fields**: `model_type`, `weights`, `export_config` with `export_formats`
+- All configuration keys must match the `YOLOConfig` dataclass fields
+- See `config/advanced_solar_defect.yaml` for a complete example
 config.epochs = 200  # User wants 200 epochs instead of 100
 ```
 
