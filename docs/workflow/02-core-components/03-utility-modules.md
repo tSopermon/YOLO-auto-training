@@ -15,6 +15,8 @@ utils/
 ├── training_utils.py              # Core training functions (12KB)
 ├── checkpoint_manager.py          # Training progress management (10KB)
 ├── training_monitor.py            # Training progress tracking (22KB)
+├── tensorboard_manager.py         # Comprehensive TensorBoard management (8KB)
+├── tensorboard_launcher.py        # TensorBoard server launching (6KB)
 ├── data_loader.py                 # Dataset loading and management (13KB)
 ├── export_utils.py                # Model export functionality (23KB)
 ├── evaluation.py                  # Model performance testing (23KB)
@@ -228,8 +230,60 @@ Tracks training progress and manages training metrics.
 - **Early stopping**: Automatically stops when performance plateaus
 - **Progress visualization**: Training curves and metrics
 - **Experiment logging**: Save all training information
+- **TensorBoard integration**: Automatic TensorBoard launch and management
 
-### **8. Checkpoint Manager (`checkpoint_manager.py`)**
+### **8. TensorBoard Manager (`tensorboard_manager.py`)**
+
+Comprehensive TensorBoard management for training visualization and monitoring.
+
+#### **What It Does**
+- **Status checking**: Check if TensorBoard is running and on which port
+- **Experiment management**: List all experiments with TensorBoard data
+- **Session control**: Start, stop, and manage TensorBoard sessions
+- **Browser integration**: Automatically open TensorBoard in browser
+- **Port management**: Handle multiple TensorBoard instances on different ports
+
+#### **TensorBoard Features**
+- **Automatic status detection**: Find running TensorBoard processes
+- **Experiment listing**: Show which experiments have TensorBoard data
+- **Smart launching**: Automatically find correct log directories
+- **Browser automation**: Open TensorBoard interface automatically
+- **Clean shutdown**: Properly stop TensorBoard processes
+
+#### **Usage Examples**
+```bash
+# Check status and open in browser
+python -m utils.tensorboard_manager status
+
+# List all experiments
+python -m utils.tensorboard_manager list
+
+# Launch specific experiment
+python -m utils.tensorboard_manager launch experiment_name
+
+# Stop all TensorBoard processes
+python -m utils.tensorboard_manager stop
+```
+
+### **9. TensorBoard Launcher (`tensorboard_launcher.py`)**
+
+Core TensorBoard server launching and directory management logic.
+
+#### **What It Does**
+- **Server launching**: Start TensorBoard server processes
+- **Directory detection**: Automatically find Ultralytics log directories
+- **Port management**: Find free ports and handle conflicts
+- **Process management**: Handle TensorBoard server lifecycle
+- **Browser automation**: Open web interface automatically
+
+#### **Technical Features**
+- **Smart directory finding**: Locate nested Ultralytics log structures
+- **Port discovery**: Find available ports automatically
+- **Process handling**: Manage subprocess for TensorBoard server
+- **Error recovery**: Handle launch failures gracefully
+- **Persistent sessions**: Keep TensorBoard running after training
+
+### **10. Checkpoint Manager (`checkpoint_manager.py`)**
 
 Manages saving and loading training progress.
 

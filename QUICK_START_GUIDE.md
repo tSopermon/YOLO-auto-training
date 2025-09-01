@@ -60,9 +60,30 @@ The system will guide you through:
 
 ### Step 3: Monitor Progress
 Training automatically:
+- **Launches TensorBoard** in your browser for real-time monitoring
+- Shows live training metrics, loss curves, and model performance
 - Saves checkpoints every 10 epochs
-- Shows real-time progress
 - Creates organized results in `logs/` folder
+- **Keeps TensorBoard running** after training for result analysis
+
+**TensorBoard Features:**
+- Real-time loss curves and accuracy plots
+- Model architecture visualization
+- Training image samples with augmentations
+- Hyperparameter tracking
+- Performance metrics (mAP50, mAP50-95, precision, recall)
+
+### Step 4: Manage TensorBoard (Optional)
+```bash
+# Check TensorBoard status and open browser
+python -m utils.tensorboard_manager status
+
+# View all your experiments
+python -m utils.tensorboard_manager list
+
+# Stop TensorBoard when done
+python -m utils.tensorboard_manager stop
+```
 
 ### Step 4: Get Your Model
 After training, find your trained model in:
@@ -91,7 +112,21 @@ python train.py --model-type yolov8 --results-folder my_experiment
 python train.py --model-type yolov8 --resume logs/previous_run/weights/last.pt
 ```
 
-### Step 3: Export for Deployment
+**TensorBoard automatically launches** during training for real-time monitoring.
+
+### Step 3: TensorBoard Management
+```bash
+# View training progress (opens browser)
+python -m utils.tensorboard_manager status
+
+# Launch TensorBoard for specific experiment
+python -m utils.tensorboard_manager launch my_experiment
+
+# List all experiments and their data status
+python -m utils.tensorboard_manager list
+```
+
+### Step 4: Export for Deployment
 ```bash
 # Export to multiple formats after training
 python utils/export_existing_models.py logs/your_experiment/weights/best.pt

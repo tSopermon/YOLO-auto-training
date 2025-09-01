@@ -200,6 +200,7 @@ dataset/valid
 *.avi
 *.mov
 *.mkv
+dataset_prepared/
 
 # Cache files
 *.cache

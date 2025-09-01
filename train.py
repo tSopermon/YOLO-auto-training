@@ -7,6 +7,7 @@ Supports YOLOv8, YOLOv5, and YOLO11 training with configuration management.
 import argparse
 import logging
 import sys
+import subprocess
 from pathlib import Path
 from typing import Dict, Any, Optional
 import torch
@@ -22,6 +23,7 @@ from utils.training_utils import train_model, validate_model
 from utils.checkpoint_manager import CheckpointManager
 from utils.training_monitor import TrainingMonitor
 from utils.auto_dataset_preparer import auto_prepare_dataset
+from utils.training_callbacks import register_training_callbacks
 
 logger = logging.getLogger(__name__)
 
@@ -574,11 +576,7 @@ def main():
             # Training mode
             logger.info("Starting training...")
 
-            # Use our custom model loader to ensure local weights are used
             try:
-                # Load model using our custom loader (which checks for local weights)
-                model = load_yolo_model(config, checkpoint_manager, args.resume)
-
                 # Create Ultralytics YOLO instance for training
                 from ultralytics import YOLO
 
@@ -586,38 +584,56 @@ def main():
 
                 # Start training
                 logger.info("Starting Ultralytics training...")
-                results = yolo_model.train(
-                    data=str(config.dataset_config["data_yaml_path"]),
-                    epochs=config.epochs,
-                    imgsz=config.image_size,
-                    batch=config.batch_size,
-                    device=config.device,
-                    workers=config.num_workers,
-                    patience=config.patience,
-                    save_period=config.logging_config.get("save_period", -1),
-                    project=config.logging_config["log_dir"],
-                    name=results_folder,  # Use custom folder name
-                    exist_ok=True,
-                    pretrained=config.pretrained,
-                    optimizer="auto",
-                    lr0=config.model_config.get("learning_rate", 0.01),
-                    weight_decay=0.0005,
-                    warmup_epochs=3.0,
-                    warmup_momentum=0.8,
-                    box=7.5,
-                    cls=0.5,
-                    dfl=1.5,
-                    close_mosaic=10,
-                    verbose=True,
-                )
-
-                logger.info("Training completed successfully!")
-                logger.info(
-                    f"Best mAP50: {results.results_dict.get('metrics/mAP50(B)', 'N/A')}"
-                )
-                logger.info(
-                    f"Best mAP50-95: {results.results_dict.get('metrics/mAP50-95(B)', 'N/A')}"
-                )
+                
+                # Setup training configuration
+                cfg = {
+                    'data': str(config.dataset_config["data_yaml_path"]),
+                    'epochs': config.epochs,
+                    'imgsz': config.image_size,
+                    'batch': config.batch_size,
+                    'device': config.device,
+                    'workers': config.num_workers,
+                    'patience': config.patience,
+                    'project': config.logging_config["log_dir"],
+                    'name': results_folder,
+                    'exist_ok': True,
+                    'lr0': config.model_config.get("learning_rate", 0.01),
+                }
+                
+                try:
+                    # Train model - Ultralytics automatically enables TensorBoard
+                    results = yolo_model.train(**cfg)
+                    
+                    # Log results
+                    logger.info(f"Training completed. Results saved to {cfg['project']}/{cfg['name']}")
+                    logger.info("You can view training metrics in TensorBoard")
+                    
+                    # Log best metrics from the results object
+                    if hasattr(results, 'results_dict'):
+                        logger.info("Best metrics achieved:")
+                        best_map50 = results.results_dict.get('metrics/mAP50(B)', 'N/A')
+                        best_map50_95 = results.results_dict.get('metrics/mAP50-95(B)', 'N/A')
+                        logger.info(f"Best mAP50: {best_map50}")
+                        logger.info(f"Best mAP50-95: {best_map50_95}")
+                    
+                    logger.info("Training completed successfully!")
+                    logger.info("=" * 60)
+                    logger.info("Training Complete! Your TensorBoard is still running.")
+                    logger.info("View your training results at: http://localhost:6006")
+                    logger.info("You can analyze training metrics, loss curves, and model performance.")
+                    logger.info("")
+                    logger.info("TensorBoard Management Commands:")
+                    logger.info("  python -m utils.tensorboard_manager status    # Check status & open")
+                    logger.info("  python -m utils.tensorboard_manager stop      # Stop TensorBoard")
+                    logger.info("  python -m utils.tensorboard_manager list      # List experiments")
+                    logger.info(f"  python -m utils.tensorboard_manager launch {results_folder}  # Relaunch this experiment")
+                    logger.info("=" * 60)
+                except Exception as e:
+                    logger.error(f"Training failed with error: {e}")
+                    raise
+                finally:
+                    # Keep TensorBoard running after training completes
+                    monitor.close(keep_tensorboard=True)
 
             except ImportError:
                 logger.error(
