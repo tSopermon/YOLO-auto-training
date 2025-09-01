@@ -49,6 +49,11 @@ Place your dataset in the `dataset/` folder. The system automatically detects an
 
 ### Step 2: Run Training
 ```bash
+# If you have a virtual environment (.venv), use:
+.venv/bin/python train.py              # Linux/Mac
+# .venv\Scripts\python.exe train.py    # Windows
+
+# Or if using system Python:
 python train.py
 ```
 
@@ -75,17 +80,13 @@ Training automatically:
 
 ### Step 4: Manage TensorBoard (Optional)
 ```bash
-# Check TensorBoard status and open browser
-python -m utils.tensorboard_manager status
-
-# View all your experiments
-python -m utils.tensorboard_manager list
-
-# Stop TensorBoard when done
-python -m utils.tensorboard_manager stop
+# Use your Python executable (adjust path as needed)
+python -m utils.tensorboard_manager status    # Check status & open browser
+python -m utils.tensorboard_manager list      # View all your experiments
+python -m utils.tensorboard_manager stop      # Stop TensorBoard when done
 ```
 
-### Step 4: Get Your Model
+### Step 5: Get Your Model
 After training, find your trained model in:
 ```
 logs/your_experiment_name/weights/best.pt
@@ -146,6 +147,10 @@ cp config/constants.py config/my_config.py
 # Use custom config
 python train.py --config config/my_config.py
 ```
+
+**Note**: Replace `python` with your virtual environment path if needed:
+- Linux/Mac: `.venv/bin/python` or `venv/bin/python`  
+- Windows: `.venv\Scripts\python.exe` or `venv\Scripts\python.exe`
 
 ### Step 2: Advanced Training
 ```bash
@@ -225,20 +230,28 @@ python train.py --model-type yolov8 --validate-only
 
 ### Utility Commands
 ```bash
-# Test dataset preparation
-python utils/prepare_dataset.py dataset/ --validate
+# Test dataset preparation (shows what would be done)
+python utils/prepare_dataset.py dataset/ --format yolov8 --verbose
 
-# Create test dataset structure
-python examples/create_test_dataset.py
+# Create a test dataset for experimentation
+python examples/create_test_dataset.py --output test_dataset --images 20
 
-# Download pretrained weights
-python utils/download_pretrained_weights.py download yolov8 n
+# Download pretrained weights (interactive)
+python utils/download_pretrained_weights.py
 
-# Export existing model
+# Download specific weights (command line)
+python utils/download_pretrained_weights.py --model yolov8 --size n
+
+# Export existing model to multiple formats
 python utils/export_existing_models.py path/to/model.pt
 
-# Run tests
+# Run all tests to verify system
 python -m pytest tests/
+
+# TensorBoard management
+python -m utils.tensorboard_manager status  # Check if running
+python -m utils.tensorboard_manager list    # List experiments
+python -m utils.tensorboard_manager stop    # Stop TensorBoard
 ```
 
 ## Troubleshooting

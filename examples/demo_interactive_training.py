@@ -6,11 +6,40 @@ This script demonstrates the different ways to run training.
 
 import subprocess
 import sys
+import os
 from pathlib import Path
+
+
+def get_python_executable():
+    """Get the correct Python executable path."""
+    # Check if we're in a virtual environment
+    if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+        return sys.executable
+    
+    # Check for virtual environment in the project directory
+    project_root = Path(__file__).parent.parent
+    venv_paths = [
+        project_root / ".venv" / "bin" / "python",
+        project_root / "venv" / "bin" / "python",
+        project_root / ".venv" / "Scripts" / "python.exe",  # Windows
+        project_root / "venv" / "Scripts" / "python.exe",   # Windows
+    ]
+    
+    for venv_path in venv_paths:
+        if venv_path.exists():
+            return str(venv_path)
+    
+    # Fall back to system python
+    return "python"
 
 
 def run_command(command, description):
     """Run a command and show its description."""
+    # Replace 'python' with the correct executable
+    python_exe = get_python_executable()
+    if command.startswith("python "):
+        command = command.replace("python ", f"{python_exe} ", 1)
+    
     print(f"\n{'='*60}")
     print(f"RUNNING: {description}")
     print(f"{'='*60}")
@@ -45,7 +74,7 @@ def main():
 
     examples = [
         {
-            "command": "python train.py --model-type yolov8 --help",
+            "command": "python train.py --help",
             "description": "Show all available command line options",
         },
         {

@@ -8,6 +8,12 @@ This project provides comprehensive documentation and examples for training vari
 ```bash
 # 1. Place ANY dataset in dataset/ folder (any structure/format)
 # 2. Run training - everything happens automatically!
+
+# If using virtual environment:
+.venv/bin/python train.py    # Linux/Mac
+# .venv\Scripts\python.exe train.py    # Windows
+
+# Or with system Python:
 python train.py
 ```
 
@@ -61,6 +67,8 @@ project = rf.workspace("workspace").project("project_id")
 dataset = project.version("version_number").download("yolov8")
 ```
 
+**Note**: Replace `python` with `.venv/bin/python` (Linux/Mac) or `.venv\Scripts\python.exe` (Windows) if using virtual environment.
+
 ### 4. Train YOLO Model (Any Version!)
 
 #### Full Interactive Experience (Recommended for Beginners)
@@ -92,6 +100,13 @@ python train.py \
   --model-type yolov8 \
   --epochs 100 \
   --batch-size 16 \
+  --image-size 640 \
+  --results-folder custom_run
+```
+
+**Important**: Replace `python` with your virtual environment path if using one:
+- Linux/Mac: `.venv/bin/python` 
+- Windows: `.venv\Scripts\python.exe`
   --image-size 640 \
   --device cuda \
   --results-folder production_run \
