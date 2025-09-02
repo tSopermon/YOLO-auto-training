@@ -285,6 +285,7 @@ def get_interactive_config(model_type: str) -> dict:
 
     print(f"\nConfiguration complete!")
     return config
+    return config
 
 
 def parse_args():
@@ -294,7 +295,7 @@ def parse_args():
     parser.add_argument(
         "--model-type",
         type=str,
-        default="yolov8",
+        default=None,
         choices=["yolo11", "yolov8", "yolov5"],
         help="YOLO model type to train (will be prompted interactively if not specified)",
     )
@@ -468,13 +469,36 @@ def main():
     args = parse_args()
 
     try:
-        # Load configuration
+        # Load configuration first if provided
+        config = None
         if args.config:
             logger.info(f"Loading configuration from: {args.config}")
             config = YOLOConfig.load(args.config)
-        else:
-            logger.info(f"Creating configuration for: {args.model_type}")
-            config = get_config(args.model_type)
+        
+        # Determine model type (from args, config, or interactive)
+        model_type = args.model_type
+        if model_type is None and config:
+            # Get model type from config file
+            model_type = config.model_type
+            logger.info(f"Using model type from config: {model_type}")
+        
+        if model_type is None:
+            if args.non_interactive:
+                # Use default when non-interactive and no model type specified
+                model_type = "yolov8"
+                logger.info("Using default model type: yolov8 (non-interactive mode)")
+            else:
+                print(f"\nInteractive YOLO Training Setup")
+                model_type = get_interactive_yolo_version()
+                logger.info(f"Selected model type: {model_type}")
+        
+        # Load or create configuration
+        if not config:
+            logger.info(f"Creating configuration for: {model_type}")
+            config = get_config(model_type)
+
+        # Update model type in args for consistency
+        args.model_type = model_type
 
         # Add auto_prepare_dataset_if_needed function
         def auto_prepare_dataset_if_needed(model_type: str) -> Path:
@@ -495,30 +519,74 @@ def main():
         # Update config with command line arguments
         config = update_config_from_args(config, args)
 
-        # Get interactive configuration if not skipped
-        if not args.non_interactive:
-            # If no model type specified, get it interactively
-            if args.model_type == "yolov8" and not args.config:
-                print(f"\nInteractive YOLO Training Setup")
-                interactive_model_type = get_interactive_yolo_version()
-                # Update the config with the selected model type
-                config = get_config(interactive_model_type)
-                args.model_type = interactive_model_type
-                logger.info(f"Selected model type: {interactive_model_type}")
-
-            print(f"\nInteractive Configuration for {args.model_type.upper()}")
-            interactive_config = get_interactive_config(args.model_type)
-            config = update_config_from_interactive(config, interactive_config)
+        # Get interactive configuration if not skipped and no config file provided
+        if not args.non_interactive and not args.config and not args.resume:
+            # Check if essential training parameters are provided via command line
+            # If epochs and batch_size are provided, skip interactive mode
+            if args.epochs is not None and args.batch_size is not None:
+                logger.info("Key training parameters provided via command line (skipping interactive configuration)")
+                # Use default values for missing parameters
+                if args.image_size is None:
+                    args.image_size = 640  # Set default image size
+                if args.device is None:
+                    args.device = "auto"  # Set default device
+                # Update config again with any new defaults
+                config = update_config_from_args(config, args)
+            else:
+                print(f"\nInteractive Configuration for {args.model_type.upper()}")
+                interactive_config = get_interactive_config(args.model_type)
+                config = update_config_from_interactive(config, interactive_config)
         else:
-            logger.info("Skipping interactive configuration (using defaults)")
+            if args.non_interactive:
+                logger.info("Skipping interactive configuration (non-interactive mode)")
+            elif args.config:
+                logger.info("Skipping interactive configuration (using config file)")
+            elif args.resume:
+                logger.info("Skipping interactive configuration (resuming from checkpoint)")
 
         # Get custom results folder name
         if args.results_folder:
             results_folder = args.results_folder
             logger.info(f"Using custom results folder: {results_folder}")
+        elif args.resume:
+            # Extract folder from resume path (e.g., logs/my_experiment/my_experiment/weights/last.pt -> my_experiment)
+            resume_path = Path(args.resume)
+            if "logs" in resume_path.parts:
+                # Find the experiment folder name from the path
+                logs_index = resume_path.parts.index("logs")
+                if len(resume_path.parts) > logs_index + 1:
+                    results_folder = resume_path.parts[logs_index + 1]
+                    logger.info(f"Resuming training in existing folder: {results_folder}")
+                else:
+                    results_folder = "resumed_training"
+                    logger.warning(f"Could not extract folder from resume path, using: {results_folder}")
+            else:
+                results_folder = "resumed_training"
+                logger.warning(f"Could not extract folder from resume path, using: {results_folder}")
+        elif args.non_interactive:
+            # Generate default folder name in non-interactive mode
+            import datetime
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            results_folder = f"{args.model_type}_{timestamp}"
+            logger.info(f"Auto-generated results folder: {results_folder}")
+        elif args.config:
+            # Generate default folder name when using config file
+            import datetime
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            results_folder = f"{model_type}_config_{timestamp}"
+            logger.info(f"Auto-generated results folder for config: {results_folder}")
         else:
-            results_folder = get_custom_results_folder()
-            logger.info(f"Selected results folder: {results_folder}")
+            # Check if we have enough CLI args to skip interactive folder selection
+            if (args.model_type and args.epochs and args.batch_size and 
+                (args.image_size and args.device)):
+                # Generate a descriptive folder name based on parameters
+                import datetime
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                results_folder = f"{args.model_type}_e{args.epochs}_b{args.batch_size}_{timestamp}"
+                logger.info(f"Auto-generated results folder: {results_folder}")
+            else:
+                results_folder = get_custom_results_folder()
+                logger.info(f"Selected results folder: {results_folder}")
 
         # Update the logging configuration with custom results folder
         config.logging_config["log_dir"] = str(Path("logs") / results_folder)
@@ -661,8 +729,63 @@ def main():
                     'name': results_folder,
                     'exist_ok': True,
                     'lr0': config.model_config.get("learning_rate", 0.01),
-                    'resume': bool(args.resume),  # Enable resume if checkpoint provided
                 }
+                
+                # Add resume parameter if provided
+                if args.resume:
+                    # First, check if the checkpoint has completed training
+                    try:
+                        import torch
+                        # Use weights_only=False for YOLO checkpoints (they contain model class definitions)
+                        ckpt = torch.load(args.resume, map_location='cpu', weights_only=False)
+                        ckpt_epoch = ckpt.get('epoch', -1)  # -1 means not started/completed
+                        ckpt_train_args = ckpt.get('train_args', {})
+                        ckpt_target_epochs = ckpt_train_args.get('epochs', 0)
+                        
+                        # Calculate actual completed epochs (epoch is 0-indexed during training, -1 when completed)
+                        if ckpt_epoch == -1:
+                            # Training was completed (epoch resets to -1 after completion)
+                            completed_epochs = ckpt_target_epochs
+                        else:
+                            # Training was interrupted (epoch shows last completed epoch)
+                            completed_epochs = ckpt_epoch + 1
+                        
+                        logger.info(f"Checkpoint inspection: epoch={ckpt_epoch}, target_epochs={ckpt_target_epochs}, completed={completed_epochs}")
+                        
+                        # If user specified epochs, check if they want to extend training
+                        if args.epochs and args.epochs > 0:
+                            if args.epochs > completed_epochs:
+                                logger.info(f"Extending training from checkpoint (completed {completed_epochs} epochs) to {args.epochs} total epochs")
+                                logger.info("Note: This will start fresh training using the checkpoint as starting weights")
+                                # Don't use resume mode, use the checkpoint as initial weights instead
+                            else:
+                                logger.warning(f"Requested {args.epochs} epochs, but checkpoint already completed {completed_epochs} epochs")
+                                logger.info("Using checkpoint as starting weights for fresh training")
+                        else:
+                            # No epochs specified - check if training can be resumed
+                            if ckpt_epoch == -1:  # Training was completed
+                                logger.error("═════════════════════════════════════════════════════════════════════════════════")
+                                logger.error("CANNOT RESUME: CHECKPOINT TRAINING ALREADY COMPLETED")
+                                logger.error("═════════════════════════════════════════════════════════════════════════════════")
+                                logger.error(f"The checkpoint has already completed {completed_epochs} epochs of training.")
+                                logger.error("To extend training beyond the original epochs, you must specify --epochs:")
+                                logger.error("")
+                                logger.error("Examples:")
+                                logger.error(f"  python train.py --model-type {args.model_type} --epochs {completed_epochs + 50} --resume {args.resume}")
+                                logger.error(f"  python train.py --model-type {args.model_type} --epochs 200 --resume {args.resume}")
+                                logger.error("")
+                                logger.error("Or use the checkpoint as initial weights for new training:")
+                                logger.error(f"  python train.py --model-type {args.model_type} --epochs 100 {args.resume}")
+                                logger.error("  (Remove --resume and use checkpoint path as model)")
+                                logger.error("═════════════════════════════════════════════════════════════════════════════════")
+                                return
+                            else:
+                                logger.info(f"Resuming training from checkpoint (completed {completed_epochs} epochs)")
+                                cfg['resume'] = args.resume
+                    except Exception as e:
+                        logger.warning(f"Could not inspect checkpoint: {e}")
+                        logger.info("Proceeding with resume attempt...")
+                        cfg['resume'] = args.resume
                 
                 try:
                     # Train model - Ultralytics automatically enables TensorBoard
@@ -681,6 +804,34 @@ def main():
                         logger.info(f"Best mAP50-95: {best_map50_95}")
                     
                     logger.info("Training completed successfully!")
+                    
+                except Exception as e:
+                    error_msg = str(e)
+                    logger.error(f"Training failed with error: {error_msg}")
+                    
+                    # Special handling for "nothing to resume" error
+                    if "training to" in error_msg and "epochs is finished, nothing to resume" in error_msg:
+                        logger.error("═" * 80)
+                        logger.error("RESUME TRAINING ERROR")
+                        logger.error("═" * 80)
+                        logger.error("The checkpoint has already completed its original training epochs.")
+                        logger.error("To extend training beyond the original epochs, use one of these options:")
+                        logger.error("")
+                        logger.error("1. Continue training with additional epochs (recommended):")
+                        logger.error(f"   python train.py --model-type {args.model_type} --epochs {args.epochs or 'NEW_EPOCH_COUNT'} {args.resume}")
+                        logger.error("   (Remove --resume and use the checkpoint path as the model)")
+                        logger.error("")
+                        logger.error("2. Or use the checkpoint as initial weights for new training:")
+                        checkpoint_path = args.resume
+                        logger.error(f"   python train.py --model-type {args.model_type} --epochs {args.epochs or 'NEW_EPOCH_COUNT'} --config custom_config.yaml")
+                        logger.error(f"   (Copy {checkpoint_path} to pretrained_weights/ and reference it)")
+                        logger.error("")
+                        logger.error("The --resume flag is only for continuing interrupted training,")
+                        logger.error("not for extending completed training sessions.")
+                        logger.error("═" * 80)
+                    
+                    logger.error(f"Training failed with error: {error_msg}")
+                    raise
                     logger.info("=" * 60)
                     logger.info("Training Complete! Your TensorBoard is still running.")
                     logger.info("View your training results at: http://localhost:6006")

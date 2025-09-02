@@ -109,8 +109,11 @@ python train.py --model-type yolov8 --epochs 200 --batch-size 16
 # Use custom results folder
 python train.py --model-type yolov8 --results-folder my_experiment
 
-# Resume from checkpoint
+# Resume interrupted training (only works if training was interrupted)
 python train.py --model-type yolov8 --resume logs/previous_run/weights/last.pt
+
+# Extend completed training beyond original epochs
+python train.py --model-type yolov8 --epochs 200 --resume logs/previous_run/weights/last.pt
 ```
 
 **TensorBoard automatically launches** during training for real-time monitoring.
@@ -144,11 +147,16 @@ python train.py --model-type yolov8 --export
 cp config/advanced_solar_defect.yaml config/my_config.yaml
 # Edit my_config.yaml with your parameters
 
-# Use custom config
+# Use custom config (completely non-interactive)
 python train.py --config config/my_config.yaml
+
+# Override specific config values via command line
+python train.py --config config/my_config.yaml --epochs 200 --batch-size 16
 ```
 
 **Important**: Configuration files must be in YAML format, not Python. See `config/advanced_solar_defect.yaml` for an example.
+
+**New Feature**: Configuration files now run completely non-interactively - no prompts for model selection, results folder, or any other parameters. The system auto-generates appropriate folder names and respects all config values.
 
 **Note**: Replace `python` with your virtual environment path if needed:
 - Linux/Mac: `.venv/bin/python` or `venv/bin/python`  
@@ -257,6 +265,42 @@ export DEFAULT_DEVICE=cuda
 export DEFAULT_EPOCHS=200
 ```
 
+## Resume vs Extend Training
+
+Understanding the difference between resuming and extending training:
+
+### Resume Training (Interrupted Training)
+Use when training was stopped mid-process (power outage, interruption, etc.):
+```bash
+# Resume from where training left off
+python train.py --model-type yolov8 --resume logs/experiment/weights/last.pt
+```
+
+### Extend Training (Add More Epochs)
+Use when you want to train a completed model for additional epochs:
+```bash
+# Extend from 100 epochs to 200 epochs
+python train.py --model-type yolov8 --epochs 200 --resume logs/experiment/weights/last.pt
+```
+
+### What Happens Automatically
+- **Smart Detection**: The system automatically detects whether training was completed or interrupted
+- **Helpful Guidance**: If you use the wrong approach, you'll get clear instructions with examples
+- **No Interactive Prompts**: When you provide command-line arguments or config files, the system respects them completely
+- **Fixed Resume Logic**: Recent improvements ensure resume functionality works correctly in all scenarios
+
+### Example Error Guidance
+If you try to resume completed training without specifying epochs:
+```
+CANNOT RESUME: CHECKPOINT TRAINING ALREADY COMPLETED
+The checkpoint has already completed 10 epochs of training.
+To extend training beyond the original epochs, you must specify --epochs:
+
+Examples:
+  python train.py --model-type yolov8 --epochs 60 --resume logs/experiment/weights/last.pt
+  python train.py --model-type yolov8 --epochs 200 --resume logs/experiment/weights/last.pt
+```
+
 ## Common Commands Reference
 
 ### Training Commands
@@ -276,8 +320,17 @@ python train.py --model-type yolov8 --device cuda
 # CPU training (if no GPU)
 python train.py --model-type yolov8 --device cpu
 
-# Custom configuration file
+# Custom configuration file (completely non-interactive)
 python train.py --config config/my_config.yaml
+
+# Override config values via command line
+python train.py --config config/my_config.yaml --epochs 150
+
+# Resume interrupted training (training was stopped mid-process)
+python train.py --model-type yolov8 --resume logs/experiment/weights/last.pt
+
+# Extend completed training (add more epochs to finished training)
+python train.py --model-type yolov8 --epochs 200 --resume logs/experiment/weights/last.pt
 
 # Validation only
 python train.py --model-type yolov8 --validate-only
@@ -316,6 +369,10 @@ python -m utils.tensorboard_manager stop    # Stop TensorBoard
 2. **Dataset not found**: Ensure dataset is in `dataset/` folder
 3. **Import errors**: Activate virtual environment with `source .venv/bin/activate`
 4. **CUDA not working**: Use `--device cuda` instead of `--device auto` or specific device numbers
+5. **Resume not working**: 
+   - For interrupted training: `python train.py --model-type yolov8 --resume path/to/last.pt`
+   - For extending completed training: `python train.py --model-type yolov8 --epochs NEW_COUNT --resume path/to/last.pt`
+   - The system will guide you with specific examples if you use the wrong approach
 
 ### GPU Memory Issues
 If you have CUDA available but training fails:
@@ -338,6 +395,8 @@ python gpu_memory_cli.py clear
 - **Use YAML format**, not Python files: `config/my_config.yaml`
 - **Required fields**: `model_type`, `weights`, `export_config` with `export_formats`
 - **Example**: See `config/advanced_solar_defect.yaml`
+- **No duplicate keys**: Ensure YAML file has no duplicate entries (like `device` appearing twice)
+- **Non-interactive**: Config files now run completely without prompts - all values are respected
 
 ### Getting Help
 - Check the comprehensive documentation in `docs/workflow/`

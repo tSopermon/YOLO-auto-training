@@ -34,81 +34,136 @@ def export_model_to_formats(model_path: Path, export_dir: Path):
         # Load the model
         model = YOLO(str(model_path))
 
-        # Create model-specific export directory
-        model_name = model_path.stem  # Remove .pt extension
-        model_export_dir = export_dir / model_name
+        # Extract experiment name from the logs path structure
+        # Expected path: logs/experiment_name/experiment_name/weights/model.pt
+        model_name = model_path.stem  # Remove .pt extension (e.g., "best")
+        
+        # Try to extract experiment name from path
+        path_parts = model_path.parts
+        experiment_name = None
+        
+        # Look for "logs" in the path and extract experiment name
+        if "logs" in path_parts:
+            logs_index = path_parts.index("logs")
+            if logs_index + 1 < len(path_parts):
+                experiment_name = path_parts[logs_index + 1]
+        
+        # Fallback to model name if we can't extract experiment name
+        if not experiment_name:
+            experiment_name = model_name
+            
+        # Create experiment-specific export directory
+        model_export_dir = export_dir / experiment_name
         model_export_dir.mkdir(parents=True, exist_ok=True)
 
         print(f"Model loaded successfully")
+        print(f"Experiment: {experiment_name}")
         print(f"Export directory: {model_export_dir}")
 
         # Export to ONNX
         print("\n1. Exporting to ONNX format...")
         onnx_path = model_export_dir / f"{model_name}.onnx"
         model.export(format="onnx", simplify=True, half=False)  # Disable half for CPU
-        # Find and move the exported ONNX file
-        onnx_files = glob.glob(f"{model_name}.onnx")
-        if onnx_files:
-            shutil.move(onnx_files[0], onnx_path)
+        # Find the exported ONNX file (Ultralytics saves to same directory as original model)
+        original_onnx = model_path.parent / f"{model_name}.onnx"
+        if original_onnx.exists():
+            shutil.copy2(original_onnx, onnx_path)
             print(f"   ✅ ONNX exported: {onnx_path}")
         else:
-            print(f"   ❌ ONNX export failed - file not found")
+            # Try looking in current directory as fallback
+            onnx_files = glob.glob(f"{model_name}.onnx")
+            if onnx_files:
+                shutil.move(onnx_files[0], onnx_path)
+                print(f"   ✅ ONNX exported: {onnx_path}")
+            else:
+                print(f"   ❌ ONNX export failed - file not found")
 
         # Export to TorchScript
         print("\n2. Exporting to TorchScript format...")
         torchscript_path = model_export_dir / f"{model_name}_torchscript.pt"
         model.export(format="torchscript", half=False)  # Disable half for CPU
-        # Find and move the exported TorchScript file
-        torchscript_files = glob.glob(f"{model_name}.torchscript")
-        if torchscript_files:
-            shutil.move(torchscript_files[0], torchscript_path)
+        # Find the exported TorchScript file (Ultralytics saves to same directory as original model)
+        original_torchscript = model_path.parent / f"{model_name}.torchscript"
+        if original_torchscript.exists():
+            shutil.copy2(original_torchscript, torchscript_path)
             print(f"   ✅ TorchScript exported: {torchscript_path}")
         else:
-            print(f"   ❌ TorchScript export failed - file not found")
+            # Try looking in current directory as fallback
+            torchscript_files = glob.glob(f"{model_name}.torchscript")
+            if torchscript_files:
+                shutil.move(torchscript_files[0], torchscript_path)
+                print(f"   ✅ TorchScript exported: {torchscript_path}")
+            else:
+                print(f"   ❌ TorchScript export failed - file not found")
 
         # Export to OpenVINO
         print("\n3. Exporting to OpenVINO format...")
         openvino_path = model_export_dir / f"{model_name}_openvino"
         model.export(format="openvino", half=False)  # Disable half for CPU
-        # Find and move the exported OpenVINO directory
-        openvino_dirs = glob.glob(f"{model_name}_openvino_model")
-        if openvino_dirs:
+        # Find the exported OpenVINO directory (Ultralytics saves to same directory as original model)
+        original_openvino = model_path.parent / f"{model_name}_openvino_model"
+        if original_openvino.exists():
             if openvino_path.exists():
                 shutil.rmtree(openvino_path)
-            shutil.move(openvino_dirs[0], openvino_path)
+            shutil.copytree(original_openvino, openvino_path)
             print(f"   ✅ OpenVINO exported: {openvino_path}")
         else:
-            print(f"   ❌ OpenVINO export failed - directory not found")
+            # Try looking in current directory as fallback
+            openvino_dirs = glob.glob(f"{model_name}_openvino_model")
+            if openvino_dirs:
+                if openvino_path.exists():
+                    shutil.rmtree(openvino_path)
+                shutil.move(openvino_dirs[0], openvino_path)
+                print(f"   ✅ OpenVINO exported: {openvino_path}")
+            else:
+                print(f"   ❌ OpenVINO export failed - directory not found")
 
         # Export to CoreML
         print("\n4. Exporting to CoreML format...")
         coreml_path = model_export_dir / f"{model_name}.mlpackage"
         model.export(format="coreml", half=False)  # Disable half for CPU
-        # Find and move the exported CoreML file (note: .mlpackage extension)
-        coreml_files = glob.glob(f"{model_name}.mlpackage")
-        if coreml_files:
-            shutil.move(coreml_files[0], coreml_path)
+        # Find the exported CoreML file (Ultralytics saves to same directory as original model)
+        original_coreml = model_path.parent / f"{model_name}.mlpackage"
+        if original_coreml.exists():
+            if coreml_path.exists():
+                shutil.rmtree(coreml_path)  # CoreML .mlpackage is a directory
+            shutil.copytree(original_coreml, coreml_path)
             print(f"   ✅ CoreML exported: {coreml_path}")
         else:
-            print(f"   ❌ CoreML export failed - file not found")
+            # Try looking in current directory as fallback
+            coreml_files = glob.glob(f"{model_name}.mlpackage")
+            if coreml_files:
+                if coreml_path.exists():
+                    shutil.rmtree(coreml_path)
+                shutil.move(coreml_files[0], coreml_path)
+                print(f"   ✅ CoreML exported: {coreml_path}")
+            else:
+                print(f"   ❌ CoreML export failed - file not found")
 
         # Export to TensorRT (if CUDA available)
         if torch.cuda.is_available():
             print("\n5. Exporting to TensorRT format...")
             tensorrt_path = model_export_dir / f"{model_name}.engine"
             model.export(format="engine", half=True)
-            # Find and move the exported TensorRT file
-            engine_files = glob.glob(f"{model_name}.engine")
-            if engine_files:
-                shutil.move(engine_files[0], tensorrt_path)
+            # Find the exported TensorRT file (Ultralytics saves to same directory as original model)
+            original_engine = model_path.parent / f"{model_name}.engine"
+            if original_engine.exists():
+                shutil.copy2(original_engine, tensorrt_path)
                 print(f"   ✅ TensorRT exported: {tensorrt_path}")
             else:
-                print(f"   ❌ TensorRT export failed - file not found")
+                # Try looking in current directory as fallback
+                engine_files = glob.glob(f"{model_name}.engine")
+                if engine_files:
+                    shutil.move(engine_files[0], tensorrt_path)
+                    print(f"   ✅ TensorRT exported: {tensorrt_path}")
+                else:
+                    print(f"   ❌ TensorRT export failed - file not found")
         else:
             print("\n5. Skipping TensorRT export (CUDA not available)")
 
         # Create export metadata
         metadata = {
+            "experiment_name": experiment_name,
             "model_name": model_name,
             "original_path": str(model_path),
             "export_timestamp": str(datetime.now()),
@@ -135,7 +190,7 @@ def export_model_to_formats(model_path: Path, export_dir: Path):
             json.dump(metadata, f, indent=2, default=str)
 
         print(f"\n   ✅ Export metadata saved: {metadata_path}")
-        print(f"\n🎉 Model {model_name} exported successfully!")
+        print(f"\n🎉 Experiment '{experiment_name}' model '{model_name}' exported successfully!")
         print(f"📁 All exports saved to: {model_export_dir}")
 
         return True
