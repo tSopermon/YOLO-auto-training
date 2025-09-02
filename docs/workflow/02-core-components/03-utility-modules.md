@@ -21,6 +21,7 @@ utils/
 ├── export_utils.py                # Model export functionality (23KB)
 ├── evaluation.py                  # Model performance testing (23KB)
 ├── training.py                    # Training execution logic (21KB)
+├── gpu_memory_manager.py          # GPU memory optimization (15KB)
 ├── download_pretrained_weights.py # Pre-trained model downloads (8.5KB)
 ├── export_existing_models.py      # Convert existing models (7.5KB)
 ├── prepare_dataset.py             # Manual dataset preparation (2.5KB)
@@ -303,7 +304,7 @@ Manages saving and loading training progress.
 
 ## Data Management Tools
 
-### **9. Data Loader (`data_loader.py`)**
+### **11. Data Loader (`data_loader.py`)**
 
 Handles loading and managing training data during training.
 
@@ -321,9 +322,55 @@ Handles loading and managing training data during training.
 - **Batch optimization**: Efficient batch creation
 - **Error handling**: Graceful handling of corrupted data
 
+## GPU Memory Management Tools
+
+### **10. GPU Memory Manager (`gpu_memory_manager.py`)**
+
+Intelligent GPU memory management system that prevents CUDA out-of-memory errors.
+
+#### **What It Does**
+- **Memory estimation**: Predicts GPU memory usage before training
+- **Safety analysis**: Provides 5-level risk assessment for configurations
+- **Memory monitoring**: Real-time GPU memory usage tracking
+- **Memory cleanup**: Automatic GPU memory cleanup after training
+- **Emergency recovery**: Handles out-of-memory situations gracefully
+
+#### **Key Features**
+- **Corrected estimation formulas**: Real-world validated memory predictions
+- **Configuration warnings**: Alerts for risky parameter combinations
+- **Actionable recommendations**: Suggests optimal batch sizes and image sizes
+- **Multi-YOLO support**: Works with YOLOv5, YOLOv8, and YOLO11
+
+#### **Usage**
+```python
+from utils.gpu_memory_manager import GPUMemoryManager
+
+gpu_manager = GPUMemoryManager()
+
+# Check configuration before training
+result = gpu_manager.estimate_training_memory_usage(
+    model_size="l", batch_size=4, image_size=1280, model_version="yolov8"
+)
+
+print(f"Safety Level: {result['safety_analysis']['safety_level']}")
+print(f"Predicted Memory: {result['estimated_usage']['total_with_margin_gb']:.2f} GB")
+```
+
+#### **CLI Interface**
+```bash
+# Check GPU memory status
+python gpu_memory_cli.py status
+
+# Test configuration safety
+python gpu_memory_cli.py check --model l --batch-size 4 --version yolov8
+
+# Clear GPU memory
+python gpu_memory_cli.py clear
+```
+
 ## Model Export and Evaluation Tools
 
-### **10. Export Utils (`export_utils.py`)**
+### **12. Export Utils (`export_utils.py`)**
 
 Converts trained models to different formats for deployment.
 
@@ -347,7 +394,7 @@ Converts trained models to different formats for deployment.
 - **Size reduction**: Compresses models when possible
 - **Performance testing**: Validates exported model performance
 
-### **11. Model Evaluation (`evaluation.py`)**
+### **13. Model Evaluation (`evaluation.py`)**
 
 Tests how well trained models perform on validation data.
 
@@ -365,7 +412,7 @@ Tests how well trained models perform on validation data.
 - **F1 Score**: Balance between precision and recall
 - **Per-class performance**: Performance on each object class
 
-### **12. Export Existing Models (`export_existing_models.py`)**
+### **14. Export Existing Models (`export_existing_models.py`)**
 
 Converts already-trained models to different formats.
 
@@ -377,7 +424,7 @@ Converts already-trained models to different formats.
 
 ## Training Execution Tools
 
-### **13. Training (`training.py`)**
+### **15. Training (`training.py`)**
 
 The main training execution logic that orchestrates the entire training process.
 

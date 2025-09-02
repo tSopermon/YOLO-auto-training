@@ -317,18 +317,21 @@ python -m utils.tensorboard_manager stop    # Stop TensorBoard
 3. **Import errors**: Activate virtual environment with `source .venv/bin/activate`
 4. **CUDA not working**: Use `--device cuda` instead of `--device auto` or specific device numbers
 
-### GPU/CUDA Issues
+### GPU Memory Issues
 If you have CUDA available but training fails:
 
 ```bash
 # Check CUDA availability
 python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"No GPU\"}')"
 
-# Use explicit CUDA device
-python train.py --device cuda --batch-size 8
+# Check if your configuration will fit before training
+python gpu_memory_cli.py check --model l --image-size 1280 --batch-size 4 --version yolov8
 
-# If memory issues persist, try:
-PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True python train.py --device cuda --batch-size 4
+# Use smaller batch size if memory issues
+python train.py --device cuda --batch-size 4
+
+# Clear GPU memory if needed
+python gpu_memory_cli.py clear
 ```
 
 ### Configuration File Issues

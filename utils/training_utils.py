@@ -18,6 +18,7 @@ from .data_loader import create_dataloader
 from .model_loader import save_checkpoint, load_optimizer_state
 from .checkpoint_manager import CheckpointManager
 from .training_monitor import TrainingMonitor
+from .gpu_memory_manager import GPUMemoryManager, clear_gpu_memory
 
 logger = logging.getLogger(__name__)
 

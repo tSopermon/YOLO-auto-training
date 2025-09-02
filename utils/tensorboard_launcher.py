@@ -40,9 +40,9 @@ def launch_tensorboard(log_dir: str | Path, port: int = None, wait_for_logs: boo
     # For Ultralytics, wait for the nested directory structure to be created
     if wait_for_logs:
         import time as time_module
-        max_wait = 60  # Maximum wait time in seconds
-        wait_interval = 2  # Check every 2 seconds
-        
+        max_wait = 30  # Maximum wait time in seconds
+        wait_interval = 1  # Check every 1 second
+
         logger.info(f"Waiting for Ultralytics to create TensorBoard logs in {log_path}...")
         
         for elapsed in range(0, max_wait, wait_interval):

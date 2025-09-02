@@ -1,6 +1,16 @@
 # YOLO Model Training with Automated Dataset System
 
-This project provides comprehensive documentation and examples for training various YOLO model versions with **zero dataset preparation required**. The automated dataset system handles any dataset format and structure automatically.
+This project provides comprehensive documentation and examples for training various YOLO model v## Features
+
+- **Multi-Model Support**: YOLOv8, YOLOv5, and YOLO11 training
+- **Smart Configuration**: Automatic dataset preparation and configuration
+- **Interactive Training**: Step-by-step guided setup for beginners
+- **GPU Optimization**: Automatic GPU memory management with corrected estimation formulas (Sept 2025)
+- **Comprehensive Monitoring**: TensorBoard integration with real-time metrics
+- **Checkpoint Management**: Automatic saving and resuming of training sessions
+- **Export Pipeline**: Convert trained models to multiple formats (ONNX, TorchScript, etc.)
+- **Validation Tools**: Comprehensive model evaluation and testing
+- **Memory Management**: Automatic GPU memory cleanup and optimization*zero dataset preparation required**. The automated dataset system handles any dataset format and structure automatically.
 
 ## Zero Dataset Preparation Required!**
 
@@ -166,6 +176,37 @@ python -m pytest tests/ -v
 - **Error Handling**: Robust error handling and recovery
 - **Performance Optimized**: Fast dataset preparation and validation
 - **Integration Ready**: Seamlessly integrates with training pipeline
+
+## GPU Memory Management
+
+The system includes intelligent GPU memory management to prevent CUDA out-of-memory errors:
+
+### **Smart Memory Features**
+- **Automatic memory estimation** before training starts
+- **Safety warnings** for risky configurations
+- **Memory cleanup** after training completion
+- **Emergency recovery** from out-of-memory errors
+
+### **Quick GPU Commands**
+```bash
+# Check memory status
+python gpu_memory_cli.py status
+
+# Test if configuration will fit before training
+python gpu_memory_cli.py check --model l --image-size 1280 --batch-size 4 --version yolov8
+
+# Clear GPU memory if needed
+python gpu_memory_cli.py clear
+
+# Monitor memory during training
+python gpu_memory_cli.py monitor
+```
+
+### **Memory Tips**
+If you get CUDA out-of-memory errors:
+1. **Reduce batch size**: Try `--batch-size 4` or `--batch-size 2`
+2. **Reduce image size**: Try `--image-size 640` instead of `--image-size 1280`
+3. **Use smaller model**: Try YOLOv8n or YOLOv8s instead of YOLOv8l
 
 ## Documentation Structure
 

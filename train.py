@@ -24,6 +24,7 @@ from utils.checkpoint_manager import CheckpointManager
 from utils.training_monitor import TrainingMonitor
 from utils.auto_dataset_preparer import auto_prepare_dataset
 from utils.training_callbacks import register_training_callbacks
+from utils.gpu_memory_manager import GPUMemoryManager, clear_gpu_memory, optimize_gpu_for_training
 
 logger = logging.getLogger(__name__)
 
@@ -567,11 +568,69 @@ def main():
             config=config, log_dir=config.logging_config["log_dir"]
         )
 
+        # Initialize GPU memory manager
+        gpu_manager = GPUMemoryManager()
+        if gpu_manager.cuda_available:
+            logger.info("GPU Memory Manager initialized successfully")
+            
+            # Check if training configuration will fit in memory
+            # Extract model size from weights filename (e.g., yolov8l.pt -> l)
+            model_size = "m"  # Default fallback
+            if config.weights:
+                import re
+                size_match = re.search(r'yolo(?:v5|v8|11)?([nslmx])', config.weights.lower())
+                if size_match:
+                    model_size = size_match.group(1)
+            
+            logger.info(f"Checking memory requirements for {config.model_type}{model_size} with {config.image_size}px images and batch size {config.batch_size}")
+            
+            memory_check = gpu_manager.estimate_training_memory_usage(
+                model_size=model_size,
+                image_size=config.image_size,
+                batch_size=config.batch_size,
+                model_version=config.model_type
+            )
+            
+            if memory_check["gpu_status"]["will_fit"]:
+                logger.info(f"✅ Configuration will fit in GPU memory ({memory_check['gpu_status']['utilization_pct']:.1f}% utilization)")
+                logger.info(f"Estimated memory usage: {memory_check['estimated_usage']['total_estimated_gb']:.2f} GB")
+            else:
+                logger.warning(f"⚠️  Configuration may exceed GPU memory ({memory_check['gpu_status']['utilization_pct']:.1f}% over capacity)")
+                logger.warning(f"Estimated memory needed: {memory_check['estimated_usage']['total_estimated_gb']:.2f} GB")
+                logger.warning(f"Available memory: {memory_check['gpu_status']['available_memory_gb']:.2f} GB")
+                logger.info(f"💡 Recommended batch size: {memory_check['recommendations']['recommended_batch_size']}")
+                
+                if memory_check['recommendations']['alternative_configs']:
+                    logger.info("🔧 Alternative configurations:")
+                    for alt in memory_check['recommendations']['alternative_configs'][:2]:
+                        logger.info(f"   • {alt['change']} (Est: {alt['estimated_memory_gb']:.2f} GB)")
+            
+            # Optimize GPU for training
+            optimization_result = optimize_gpu_for_training(config.batch_size)
+            if "error" not in optimization_result:
+                logger.info("GPU optimizations applied for training")
+                recs = optimization_result["recommendations"]
+                logger.info(f"Available GPU memory: {recs['available_memory_gb']:.2f} GB")
+            else:
+                logger.warning("Could not optimize GPU settings")
+        else:
+            logger.info("GPU not available - skipping GPU optimizations")
+
         if args.validate_only:
             # Validation only mode
             logger.info("Running validation only...")
             model = load_yolo_model(config, checkpoint_manager, args.resume)
-            validate_model(model, config, monitor)
+            
+            try:
+                validate_model(model, config, monitor)
+            finally:
+                # Clear GPU memory after validation
+                if gpu_manager.cuda_available:
+                    logger.info("Clearing GPU memory after validation...")
+                    cleanup_result = clear_gpu_memory(aggressive=True)
+                    if "error" not in cleanup_result:
+                        freed_gb = cleanup_result.get("freed_gb", 0)
+                        logger.info(f"GPU memory cleanup completed. Freed: {freed_gb:.2f} GB")
         else:
             # Training mode
             logger.info("Starting training...")
@@ -635,10 +694,36 @@ def main():
                     logger.info("=" * 60)
                 except Exception as e:
                     logger.error(f"Training failed with error: {e}")
+                    
+                    # Check if it's a GPU memory error
+                    if "out of memory" in str(e).lower() or "cuda" in str(e).lower():
+                        logger.error("GPU memory error detected. Performing emergency cleanup...")
+                        if gpu_manager.cuda_available:
+                            emergency_result = gpu_manager.emergency_cleanup()
+                            if emergency_result.get("success", False):
+                                logger.info("Emergency GPU cleanup completed successfully")
+                            else:
+                                logger.error("Emergency GPU cleanup failed")
                     raise
                 finally:
                     # Keep TensorBoard running after training completes
                     monitor.close(keep_tensorboard=True)
+                    
+                    # Clear GPU memory after training
+                    if gpu_manager.cuda_available:
+                        logger.info("Performing final GPU memory cleanup...")
+                        cleanup_result = clear_gpu_memory(aggressive=True)
+                        if "error" not in cleanup_result:
+                            freed_gb = cleanup_result.get("freed_gb", 0)
+                            logger.info(f"GPU memory cleanup completed. Freed: {freed_gb:.2f} GB")
+                            
+                            # Show final memory stats
+                            final_stats = gpu_manager.get_memory_stats()
+                            if "error" not in final_stats:
+                                gpu_usage = final_stats["gpu"]["reserved_pct"]
+                                logger.info(f"Final GPU memory usage: {gpu_usage:.1f}%")
+                        else:
+                            logger.warning("Could not perform final GPU cleanup")
 
             except ImportError:
                 logger.error(
